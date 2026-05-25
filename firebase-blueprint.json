@@ -1,0 +1,289 @@
+{
+  "entities": {
+    "Investment": {
+      "title": "Investment",
+      "description": "An individual investment asset.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "subCategory": { "type": "string" },
+        "currentValue": { "type": "number" },
+        "investedValue": { "type": "number" },
+        "lastUpdated": { "type": "string" },
+        "symbol": { "type": "string" },
+        "schemeCode": { "type": "string" },
+        "quantity": { "type": "number" },
+        "price": { "type": "number" },
+        "buyPrice": { "type": "number" },
+        "return1Y": { "type": "number" },
+        "return3Y": { "type": "number" },
+        "return5Y": { "type": "number" },
+        "isSIP": { "type": "boolean" },
+        "sipAmount": { "type": "number" },
+        "sipNextDate": { "type": "string" }
+      },
+      "required": ["id", "name", "category", "currentValue", "investedValue"]
+    },
+    "Goal": {
+      "title": "Goal",
+      "description": "A financial goal to track progress.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "targetAmount": { "type": "number" },
+        "currentAmount": { "type": "number" },
+        "targetDate": { "type": "string" },
+        "priority": { "type": "string" }
+      },
+      "required": ["id", "name", "targetAmount", "currentAmount", "targetDate"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "A recorded expense.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "category": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string" },
+        "isRecurring": { "type": "boolean" }
+      },
+      "required": ["id", "category", "amount", "date"]
+    },
+    "Income": {
+      "title": "Income",
+      "description": "A source of income.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "source": { "type": "string" },
+        "amount": { "type": "number" },
+        "date": { "type": "string" },
+        "isRecurring": { "type": "boolean" },
+        "frequency": { "type": "string" }
+      },
+      "required": ["id", "source", "amount", "date"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A record of an investment transaction.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "investmentId": { "type": "string" },
+        "investmentName": { "type": "string" },
+        "type": { "type": "string" },
+        "date": { "type": "string" },
+        "quantity": { "type": "number" },
+        "price": { "type": "number" },
+        "amount": { "type": "number" },
+        "category": { "type": "string" }
+      },
+      "required": ["id", "investmentId", "type", "date", "amount"]
+    },
+    "InsurancePolicy": {
+      "title": "InsurancePolicy",
+      "description": "An insurance policy.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "provider": { "type": "string" },
+        "sumAssured": { "type": "number" },
+        "premium": { "type": "number" },
+        "premiumFrequency": { "type": "string" },
+        "startDate": { "type": "string" },
+        "expiryDate": { "type": "string" },
+        "nominee": { "type": "string" }
+      },
+      "required": ["id", "name", "type", "provider", "sumAssured", "premium"]
+    },
+    "TaxProfile": {
+      "title": "TaxProfile",
+      "description": "The user's tax profile.",
+      "type": "object",
+      "properties": {
+        "annualIncome": { "type": "number" },
+        "basicSalary": { "type": "number" },
+        "actualHRA": { "type": "number" },
+        "rentPaid": { "type": "number" },
+        "cityType": { "type": "string" },
+        "investments80C": { "type": "number" },
+        "nps80CCD": { "type": "number" },
+        "medicalInsurance80D": { "type": "number" },
+        "standardDeduction": { "type": "number" }
+      }
+    },
+    "Liability": {
+      "title": "Liability",
+      "description": "A debt or financial obligation.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string" },
+        "totalAmount": { "type": "number" },
+        "outstandingAmount": { "type": "number" },
+        "interestRate": { "type": "number" },
+        "emi": { "type": "number" },
+        "startDate": { "type": "string" },
+        "endDate": { "type": "string" },
+        "lender": { "type": "string" }
+      },
+      "required": ["id", "name", "type", "totalAmount", "outstandingAmount", "interestRate", "emi"]
+    },
+    "BankAccount": {
+      "title": "BankAccount",
+      "description": "A bank account record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "memberId": { "type": "string" },
+        "accountHolderName": { "type": "string" },
+        "bankName": { "type": "string" },
+        "lastFourDigits": { "type": "string" },
+        "balance": { "type": "number" },
+        "accountType": { "type": "string" },
+        "lastUpdated": { "type": "string" }
+      },
+      "required": ["id", "memberId", "accountHolderName", "bankName", "lastFourDigits", "balance", "accountType"]
+    },
+    "BankTransaction": {
+      "title": "BankTransaction",
+      "description": "A record of a bank account transaction.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "bankAccountId": { "type": "string" },
+        "date": { "type": "string" },
+        "description": { "type": "string" },
+        "amount": { "type": "number" },
+        "category": { "type": "string" },
+        "type": { "type": "string" },
+        "reference": { "type": "string" }
+      },
+      "required": ["id", "bankAccountId", "date", "description", "amount", "type"]
+    },
+    "CreditCard": {
+      "title": "CreditCard",
+      "description": "A credit card record.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "cardName": { "type": "string" },
+        "bankName": { "type": "string" },
+        "lastFourDigits": { "type": "string" },
+        "creditLimit": { "type": "number" },
+        "currentOutstanding": { "type": "number" },
+        "dueDate": { "type": "string" },
+        "lastUpdated": { "type": "string" }
+      },
+      "required": ["id", "cardName", "bankName", "lastFourDigits", "creditLimit", "currentOutstanding"]
+    },
+    "CreditCardTransaction": {
+      "title": "CreditCardTransaction",
+      "description": "A record of a credit card transaction.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "creditCardId": { "type": "string" },
+        "date": { "type": "string" },
+        "description": { "type": "string" },
+        "amount": { "type": "number" },
+        "category": { "type": "string" },
+        "type": { "type": "string" },
+        "reference": { "type": "string" }
+      },
+      "required": ["id", "creditCardId", "date", "description", "amount", "type"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User's premium profile and wallet data.",
+      "type": "object",
+      "properties": {
+        "walletBalance": { "type": "number" },
+        "subscriptionTier": { "type": "string", "enum": ["Free", "Pro", "Elite", "Institutional"] },
+        "subscriptionExpiry": { "type": "string" },
+        "email": { "type": "string" },
+        "isVerified": { "type": "boolean" }
+      }
+    },
+    "WalletTransaction": {
+      "title": "WalletTransaction",
+      "description": "A financial transaction within the RH Wallet.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "amount": { "type": "number" },
+        "type": { "type": "string", "enum": ["Credit", "Debit"] },
+        "description": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "category": { "type": "string" },
+        "offerApplied": { "type": "string" }
+      },
+      "required": ["id", "amount", "type", "description", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}/investments/{investmentId}": {
+      "schema": "Investment",
+      "description": "User's investments."
+    },
+    "/users/{userId}/goals/{goalId}": {
+      "schema": "Goal",
+      "description": "User's financial goals."
+    },
+    "/users/{userId}/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "User's expenses."
+    },
+    "/users/{userId}/incomes/{incomeId}": {
+      "schema": "Income",
+      "description": "User's income sources."
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "User's investment transactions."
+    },
+    "/users/{userId}/insurances/{insuranceId}": {
+      "schema": "InsurancePolicy",
+      "description": "User's insurance policies."
+    },
+    "/users/{userId}/taxProfile/current": {
+      "schema": "TaxProfile",
+      "description": "User's current tax profile."
+    },
+    "/users/{userId}/liabilities/{liabilityId}": {
+      "schema": "Liability",
+      "description": "User's liabilities."
+    },
+    "/users/{userId}/bankAccounts/{bankAccountId}": {
+      "schema": "BankAccount",
+      "description": "User's bank accounts."
+    },
+    "/users/{userId}/bankTransactions/{bankTransactionId}": {
+      "schema": "BankTransaction",
+      "description": "User's bank transactions."
+    },
+    "/users/{userId}/creditCards/{creditCardId}": {
+      "schema": "CreditCard",
+      "description": "User's credit cards."
+    },
+    "/users/{userId}/creditCardTransactions/{creditCardTransactionId}": {
+      "schema": "CreditCardTransaction",
+      "description": "User's credit card transactions."
+    },
+    "/users/{userId}/profile/current": {
+      "schema": "UserProfile",
+      "description": "User's main profile and wallet status."
+    },
+    "/users/{userId}/walletTransactions/{txId}": {
+      "schema": "WalletTransaction",
+      "description": "Wallet transaction history."
+    }
+  }
+}

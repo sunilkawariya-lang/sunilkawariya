@@ -1,0 +1,6 @@
+{
+  "name": "RH Wealth - Private Wealth Management",
+  "description": "A premium wealth management platform for high-net-worth professionals. Features advanced tax optimization, goal-based portfolio rebalancing, and bespoke AI financial advisory.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

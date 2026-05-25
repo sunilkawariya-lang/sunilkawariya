@@ -1,0 +1,138 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    // Collection: /users/{userId}/investments
+    // Fields: id, name, category, subCategory, currentValue, investedValue, lastUpdated, symbol, schemeCode, quantity, price, buyPrice, return1Y, return3Y, return5Y, isSIP, sipAmount, sipNextDate
+    //
+    // Collection: /users/{userId}/goals
+    // Fields: id, name, targetAmount, currentAmount, targetDate, priority
+    //
+    // Collection: /users/{userId}/expenses
+    // Fields: id, category, amount, date, isRecurring
+    //
+    // Collection: /users/{userId}/incomes
+    // Fields: id, source, amount, date, isRecurring, frequency
+    //
+    // Collection: /users/{userId}/transactions
+    // Fields: id, investmentId, investmentName, type, date, quantity, price, amount, category
+    //
+    // Collection: /users/{userId}/insurances
+    // Fields: id, name, type, provider, sumAssured, premium, premiumFrequency, startDate, expiryDate, nominee
+    //
+    // Collection: /users/{userId}/taxProfile
+    // Fields: annualIncome, basicSalary, actualHRA, rentPaid, cityType, investments80C, nps80CCD, medicalInsurance80D, standardDeduction
+    //
+    // Collection: /users/{userId}/liabilities
+    // Fields: id, name, type, totalAmount, outstandingAmount, interestRate, emi, startDate, endDate, lender
+    //
+    // Collection: /users/{userId}/bankAccounts
+    // Fields: id, memberId, accountHolderName, bankName, lastFourDigits, balance, accountType, lastUpdated
+    //
+    // Collection: /users/{userId}/bankTransactions
+    // Fields: id, bankAccountId, date, description, amount, category, type, reference
+    //
+    // Collection: /users/{userId}/creditCards
+    // Fields: id, cardName, bankName, lastFourDigits, creditLimit, currentOutstanding, dueDate, lastUpdated
+    //
+    // Collection: /users/{userId}/creditCardTransactions
+    // Fields: id, creditCardId, date, description, amount, category, type, reference
+    //
+    // Collection: /users/{userId}/safeDocuments
+    // Fields: id, memberId, name, category, uploadDate, expiryDate, fileUrl, notes
+    //
+    // Collection: /users/{userId}/meetingDiscussions
+    // Fields: id, date, title, summary, actionItems, attendees, nextMeetingDate
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidString(val, min, max) {
+      return val is string && val.size() >= min && val.size() <= max;
+    }
+
+    function isValidNumber(val, min) {
+      return val is number && val >= min;
+    }
+
+    function isValidBankAccount(data) {
+      return data.id is string &&
+             data.memberId is string &&
+             data.accountHolderName is string &&
+             data.bankName is string &&
+             data.lastFourDigits is string &&
+             data.balance is number &&
+             data.accountType is string;
+    }
+
+    function isValidCreditCard(data) {
+      return data.id is string &&
+             data.cardName is string &&
+             data.bankName is string &&
+             data.lastFourDigits is string &&
+             data.creditLimit is number &&
+             data.currentOutstanding is number;
+    }
+
+    function isValidCreditCardTransaction(data) {
+      return data.id is string &&
+             data.creditCardId is string &&
+             data.date is string &&
+             data.description is string &&
+             data.amount is number &&
+             data.type is string;
+    }
+
+    function isValidSafeDocument(data) {
+      return data.id is string &&
+             data.memberId is string &&
+             data.name is string &&
+             data.category is string &&
+             data.uploadDate is string;
+    }
+
+    function isValidMeetingDiscussion(data) {
+      return data.id is string &&
+             data.date is string &&
+             data.title is string &&
+             data.summary is string &&
+             data.actionItems is list &&
+             data.attendees is list;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Connection test document
+    match /test/{docId} {
+      allow read: if true;
+    }
+
+    // User data - secured by UID
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+
+      // Allow access to all subcollections under the user document
+      match /{allSubcollections=**} {
+        allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      }
+    }
+  }
+}
