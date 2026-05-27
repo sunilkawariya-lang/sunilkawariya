@@ -150,6 +150,61 @@ export default function GoogleVerification() {
         </div>
       </div>
 
+      {/* SPECIAL DIAGNOSTIC UNIT FOR CUSTOM VERCEL DOMAINS */}
+      <div className="border border-amber-200 bg-amber-50/40 rounded-[2rem] p-6 md:p-8 space-y-6">
+        <div className="space-y-1">
+          <h3 className="text-base font-black text-amber-900 uppercase tracking-wider flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-ping" />
+            Vercel Deployment: Fixing Auth Failures
+          </h3>
+          <p className="text-xs text-amber-700 font-medium">Why login works in AI Studio preview but triggers errors on your Vercel URL, and how to fix it in 3 minutes.</p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 text-xs">
+          <div className="bg-white rounded-2xl p-5 border border-amber-200/60 shadow-sm space-y-3">
+            <div className="flex items-center gap-2 text-amber-800 font-black uppercase tracking-wider text-[11px]">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+              1. Add Custom Domain to Firebase Console (CRITICAL)
+            </div>
+            <p className="text-slate-600 leading-relaxed pl-3">
+              Firebase Auth restricts sign-ins to pre-approved domains. Since your custom domain (e.g., <code>pmsbasket.com</code>) is hosted on Vercel, Firebase blocks the login handshake unless you add it:
+            </p>
+            <ol className="list-decimal pl-7 space-y-1 text-slate-700 font-medium">
+              <li>Go to the <a href="https://console.firebase.google.com" target="_blank" rel="noreferrer" className="text-indigo-600 font-bold hover:underline">Firebase Console</a> and select your project.</li>
+              <li>Go to <strong>Authentication</strong> &gt; click the <strong>Settings</strong> tab.</li>
+              <li>Click <strong>Authorized Domains</strong> in the sidebar.</li>
+              <li>Click <strong>Add Domain</strong> and input your Vercel domains (both the <code>your-app.vercel.app</code> and your custom domain <code>pmsbasket.com</code>).</li>
+            </ol>
+          </div>
+
+          <div className="bg-white rounded-2xl p-5 border border-amber-200/60 shadow-sm space-y-3">
+            <div className="flex items-center gap-2 text-amber-800 font-black uppercase tracking-wider text-[11px]">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-600" />
+              2. Authorize Origins in Google Cloud Console
+            </div>
+            <p className="text-slate-600 leading-relaxed pl-3">
+              Google's credentials service will reject authorization requests coming from unlisted domains. You must whitelist your Vercel origins:
+            </p>
+            <ol className="list-decimal pl-7 space-y-1 text-slate-700 font-medium">
+              <li>Open your <a href="https://console.cloud.google.com" target="_blank" rel="noreferrer" className="text-indigo-600 font-bold hover:underline">Google Cloud Console</a>.</li>
+              <li>Navigate to <strong>APIs & Services</strong> &gt; <strong>Credentials</strong>.</li>
+              <li>Under <strong>OAuth 2.0 Client IDs</strong>, click the pencil icon next to your Web Client config.</li>
+              <li>Under <strong>Authorized JavaScript origins</strong>, click "Add URI" and paste your Vercel host URLs:
+                <div className="bg-slate-50 px-3 py-1.5 font-mono text-[10.5px] rounded-lg mt-1 border text-slate-600 flex flex-wrap gap-2 select-all leading-relaxed">
+                  <span>https://your-subdomain.vercel.app</span>
+                  <span>https://yourcustomdomain.com</span>
+                </div>
+              </li>
+              <li>Under <strong>Authorized redirect URIs</strong>, add your standard Firebase Auth URI:
+                <div className="bg-slate-50 px-3 py-1.5 font-mono text-[10.5px] rounded-lg mt-1 border text-indigo-600 select-all truncate">
+                  https://your-firebase-project.firebaseapp.com/__/auth/handler
+                </div>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
       {/* Info Card alerting them about deployment URL setup */}
       <div className="flex gap-3 bg-indigo-50 border border-indigo-100/50 text-indigo-950 text-xs p-4 rounded-2xl leading-relaxed">
         <Info className="text-indigo-600 shrink-0 mt-0.5" size={18} />
