@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'motion/react';
 import { PortfolioState, Investment, AssetCategory, FamilyMember, InsurancePolicy } from '../types';
 import { useFirebase } from '../contexts/FirebaseContext';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -28,8 +29,12 @@ import {
   Calendar,
   X,
   Plus,
-  Info
+  Info,
+  Scale,
+  Shield
 } from 'lucide-react';
+import PrivacyPolicy from './PrivacyPolicy';
+import TermsOfService from './TermsOfService';
 import { 
   PieChart, 
   Pie, 
@@ -60,6 +65,7 @@ const Dashboard: React.FC<DashboardProps> = ({ portfolio, isRefreshing, onRefres
   const { user } = useFirebase();
   const [walletBalance, setWalletBalance] = useState(0);
   const [subscriptionTier, setSubscriptionTier] = useState('Free');
+  const [selectedPolicy, setSelectedPolicy] = useState<'privacy' | 'terms' | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -878,7 +884,7 @@ const Dashboard: React.FC<DashboardProps> = ({ portfolio, isRefreshing, onRefres
                     <Wallet size={14} />
                   </div>
                   <div className="flex flex-col items-start text-left">
-                    <span className="text-[10px] font-bold text-wealth-gold/60 uppercase tracking-widest leading-none mb-1">RH Wallet</span>
+                    <span className="text-[10px] font-bold text-wealth-gold/60 uppercase tracking-widest leading-none mb-1">PMS Basket Wallet</span>
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-black text-wealth-gold">₹{(walletBalance || 0).toLocaleString('en-IN')}</span>
                       <div className="w-1 h-1 rounded-full bg-wealth-gold/30" />
@@ -2018,6 +2024,105 @@ const Dashboard: React.FC<DashboardProps> = ({ portfolio, isRefreshing, onRefres
           </div>
         </div>
       </div>
+
+      {/* Trust, Compliance & Legal Center */}
+      <div className="premium-card p-8 bg-white border border-slate-200/80 rounded-[2.5rem] space-y-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6">
+          <div>
+            <h4 className="font-bold text-slate-900 flex items-center gap-2 text-xl tracking-tight">
+              <ShieldCheck size={22} className="text-wealth-navy" />
+              Legal & Trust Compliance Hub
+            </h4>
+            <p className="text-xs text-slate-500 mt-1">Institutional-grade disclosures, user privacy policies, and service agreement terms</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-wider rounded-full border border-emerald-100">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Fully Compliant & Secure
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Privacy Policy Block */}
+          <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all flex flex-col justify-between">
+            <div className="space-y-3">
+              <div className="w-10 h-10 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center">
+                <Shield size={20} />
+              </div>
+              <h5 className="font-extrabold text-slate-900 text-base">Privacy Policy</h5>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Learn how we protect your personal identity, safe documents, and Google Workspace integrations using 256-bit encryption. Zero data selling.
+              </p>
+            </div>
+            <button 
+              onClick={() => setSelectedPolicy('privacy')}
+              className="mt-5 w-fit px-5 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+            >
+              View Full Privacy Policy
+            </button>
+          </div>
+
+          {/* Terms Of Service Block */}
+          <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-200 hover:shadow-md transition-all flex flex-col justify-between">
+            <div className="space-y-3">
+              <div className="w-10 h-10 bg-amber-50 border border-amber-100 text-amber-600 rounded-xl flex items-center justify-center">
+                <Scale size={20} />
+              </div>
+              <h5 className="font-extrabold text-slate-900 text-base">Terms of Service</h5>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Review disclosures, liability caps, and user agreements concerning expert wealth consultancy, calculations, and AI model recommendations.
+              </p>
+            </div>
+            <button 
+              onClick={() => setSelectedPolicy('terms')}
+              className="mt-5 w-fit px-5 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
+            >
+              View Full Terms of Service
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Dynamic Overlay Modal for Legal Documents */}
+      {selectedPolicy && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white rounded-[2rem] w-full max-w-4xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
+          >
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">
+                  {selectedPolicy === 'privacy' ? 'Privacy Policy Disclosure' : 'Terms of Service Agreement'}
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">Official regulatory document for member trust & safety</p>
+              </div>
+              <button 
+                onClick={() => setSelectedPolicy(null)}
+                className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-8 overflow-y-auto custom-scrollbar">
+              {selectedPolicy === 'privacy' ? <PrivacyPolicy /> : <TermsOfService />}
+            </div>
+
+            <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
+              <button 
+                onClick={() => setSelectedPolicy(null)}
+                className="px-6 py-2.5 bg-wealth-navy hover:bg-wealth-navy/90 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md cursor-pointer"
+              >
+                Close & Return
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
       {/* Investment Details Modal */}
       {showInvestmentDetails && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">

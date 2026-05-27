@@ -53,6 +53,13 @@ const GoalPlanner: React.FC<GoalPlannerProps> = ({ portfolio, setPortfolio }) =>
   const [activeTab, setActiveTab] = useState<'status' | 'maker' | 'mapper'>('status');
   const [makerCategory, setMakerCategory] = useState<string>('Retirement');
   const [mappingInvestmentId, setMappingInvestmentId] = useState<string | null>(null);
+  const [successInfo, setSuccessInfo] = useState<{
+    isOpen: boolean;
+    name: string;
+    targetAmount: number;
+    category: string;
+    isUpdate: boolean;
+  } | null>(null);
 
   const [formData, setFormData] = useState<any>({
     name: '',
@@ -81,8 +88,8 @@ const GoalPlanner: React.FC<GoalPlannerProps> = ({ portfolio, setPortfolio }) =>
     // We allow scenarios by showing the corpus for the current settings
     const yearsToRetire = Math.max(1, (formData.retirementAge || 60) - (formData.currentAge || 35));
     const yearsInRetirement = Math.max(1, (formData.lifeExpectancy || 85) - (formData.retirementAge || 60));
-    const infl = (formData.expectedInflation || 6) / 100;
-    const rPost = (formData.returnAfterRetirement || 8) / 100;
+    const infl = (formData.expectedInflation !== undefined ? formData.expectedInflation : 6) / 100;
+    const rPost = (formData.returnAfterRetirement !== undefined ? formData.returnAfterRetirement : 8) / 100;
     
     const annualExpenseAtRetirement = (formData.annualExpenses || 600000) * Math.pow(1 + infl, yearsToRetire);
     const realReturnInRetirement = (1 + rPost) / (1 + infl) - 1;
@@ -93,42 +100,67 @@ const GoalPlanner: React.FC<GoalPlannerProps> = ({ portfolio, setPortfolio }) =>
     } else {
       corpus = annualExpenseAtRetirement * (1 - Math.pow(1 + realReturnInRetirement, -yearsInRetirement)) / realReturnInRetirement;
     }
-    return Math.round(corpus);
+    
+    const rounded = Math.round(corpus);
+    if (isNaN(rounded) || rounded <= 0 || !isFinite(rounded)) {
+      return formData.targetAmount || 50000000; // Safe default of 5 crores
+    }
+    return rounded;
   }, [makerCategory, formData]);
 
   const handleSaveGoal = async () => {
-    const targetAmt = makerCategory === 'Retirement' ? calculateRetirementCorpus : formData.targetAmount;
+    const finalName = (formData.name || '').trim() || `${makerCategory || 'Retirement'} Plan`;
+    const targetAmt = makerCategory === 'Retirement' ? calculateRetirementCorpus : Number(formData.targetAmount || 0);
     
-    if (!formData.name) {
-      toast.error('Please enter a name for your strategic goal');
-      return;
-    }
     if (!targetAmt || targetAmt <= 0) {
-      toast.error('Target amount must be greater than zero. check your inputs.');
+      toast.error('Calculated target corpus must be greater than zero. Please check your inputs.');
       return;
     }
     
     const newGoal = {
       ...formData,
+      name: finalName,
       targetAmount: targetAmt,
-      memberId: formData.memberId === 'self' ? 'm1' : (formData.memberId || (portfolio.selectedMemberId === 'family' ? 'm1' : portfolio.selectedMemberId))
+      currentAmount: Number(formData.currentAmount || 0),
+      expectedReturn: Number(formData.expectedReturn || 12),
+      expectedInflation: Number(formData.expectedInflation || 6),
+      category: makerCategory || 'Retirement',
+      memberId: formData.memberId === 'self' ? 'm1' : (formData.memberId || (portfolio?.selectedMemberId === 'family' ? 'm1' : portfolio?.selectedMemberId || 'm1'))
     } as Goal;
+
+    // For Retirement category, ensure we also preserve retirement age parameter constraints
+    if (makerCategory === 'Retirement') {
+      newGoal.retirementAge = Number(formData.retirementAge || 60);
+      newGoal.currentAge = Number(formData.currentAge || 35);
+      newGoal.lifeExpectancy = Number(formData.lifeExpectancy || 85);
+      newGoal.annualExpenses = Number(formData.annualExpenses || 600000);
+      newGoal.returnAfterRetirement = Number(formData.returnAfterRetirement || 8);
+    }
 
     try {
       if (formData.id) {
         await updateGoal(newGoal);
-        toast.success(`Updates published: ${formData.name}`);
+        toast.success(`Updates published successfully: ${finalName}`);
       } else {
         newGoal.id = Math.random().toString(36).substr(2, 9);
         await addGoal(newGoal);
-        toast.success(`Published strategic goal: ${formData.name}`);
+        toast.success(`Published strategic goal: ${finalName}`);
       }
+      
+      // Trigger the highly-visible custom confirmation dialog message block
+      setSuccessInfo({
+        isOpen: true,
+        name: finalName,
+        targetAmount: targetAmt,
+        category: makerCategory || 'Retirement',
+        isUpdate: !!formData.id
+      });
       
       // Clear form after publish to avoid stale data
       setFormData({
         name: '',
         targetAmount: 0,
-        currentAmount: 0,
+        currentAmount: 1000000,
         targetDate: new Date(new Date().setFullYear(new Date().getFullYear() + 25)).toISOString().split('T')[0],
         startDate: new Date().toISOString().split('T')[0],
         priority: 'High',
@@ -153,7 +185,16 @@ const GoalPlanner: React.FC<GoalPlannerProps> = ({ portfolio, setPortfolio }) =>
   };
 
   const editInMaker = (goal: Goal) => {
-    setFormData(goal);
+    setFormData({
+      retirementAge: 60,
+      currentAge: 35,
+      lifeExpectancy: 85,
+      annualExpenses: 600000,
+      returnAfterRetirement: 8,
+      expectedInflation: 6,
+      expectedReturn: 12,
+      ...goal
+    });
     setMakerCategory(goal.category as any);
     setActiveTab('maker');
   };
@@ -359,11 +400,18 @@ const GoalPlanner: React.FC<GoalPlannerProps> = ({ portfolio, setPortfolio }) =>
                             value={formData.currentAge || ''}
                             onChange={(e) => {
                               const age = Number(e.target.value);
-                              setFormData(prev => ({ 
-                                ...prev, 
-                                currentAge: age,
-                                targetDate: new Date(new Date().setFullYear(new Date().getFullYear() + (prev.retirementAge - age))).toISOString().split('T')[0]
-                              }));
+                              setFormData(prev => {
+                                const retAge = prev.retirementAge !== undefined ? prev.retirementAge : 60;
+                                const diff = retAge - age;
+                                const targetYr = new Date().getFullYear() + (isNaN(diff) ? 25 : diff);
+                                const d = new Date();
+                                d.setFullYear(targetYr);
+                                return {
+                                  ...prev,
+                                  currentAge: age,
+                                  targetDate: d.toISOString().split('T')[0]
+                                };
+                              });
                             }}
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
                           />
@@ -375,11 +423,18 @@ const GoalPlanner: React.FC<GoalPlannerProps> = ({ portfolio, setPortfolio }) =>
                             value={formData.retirementAge || ''}
                             onChange={(e) => {
                               const rAge = Number(e.target.value);
-                              setFormData(prev => ({ 
-                                ...prev, 
-                                retirementAge: rAge,
-                                targetDate: new Date(new Date().setFullYear(new Date().getFullYear() + (rAge - prev.currentAge))).toISOString().split('T')[0]
-                              }));
+                              setFormData(prev => {
+                                const curAge = prev.currentAge !== undefined ? prev.currentAge : 35;
+                                const diff = rAge - curAge;
+                                const targetYr = new Date().getFullYear() + (isNaN(diff) ? 25 : diff);
+                                const d = new Date();
+                                d.setFullYear(targetYr);
+                                return {
+                                  ...prev,
+                                  retirementAge: rAge,
+                                  targetDate: d.toISOString().split('T')[0]
+                                };
+                              });
                             }}
                             className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl font-bold focus:ring-2 focus:ring-indigo-500 outline-none"
                           />
@@ -1399,6 +1454,47 @@ const GoalPlanner: React.FC<GoalPlannerProps> = ({ portfolio, setPortfolio }) =>
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Success Publish Confirmation Overlay */}
+      {successInfo && successInfo.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-white max-w-md w-full rounded-[32px] p-8 shadow-2xl border border-slate-100 flex flex-col items-center text-center space-y-6 animate-fade-in"
+          >
+            <div className="w-20 h-20 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center text-emerald-500 shadow-xl shadow-emerald-50/50">
+              <Check size={40} className="stroke-[3]" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">
+                {successInfo.isUpdate ? 'Updates Published Successfully!' : 'Strategic Goal Published Successfully!'}
+              </h3>
+              <p className="text-slate-500 text-sm mt-3 leading-relaxed">
+                Your strategic goal <strong className="text-slate-805 font-bold text-indigo-750">"{successInfo.name}"</strong> has been successfully synchronized and updated in your financial roadmap blueprint.
+              </p>
+            </div>
+            
+            <div className="w-full bg-slate-50 rounded-2xl p-5 border border-slate-100 divide-y divide-slate-200/50 text-left space-y-3">
+              <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-slate-400">
+                <span>Category</span>
+                <span className="text-slate-700 font-black bg-indigo-50 text-indigo-700 px-3 py-1 rounded-full text-[10px]">{successInfo.category}</span>
+              </div>
+              <div className="flex justify-between items-center pt-3 text-xs font-bold uppercase tracking-wider text-slate-400">
+                <span>Calculated Target Corpus</span>
+                <span className="text-emerald-600 font-black text-base">{formatCurrency(successInfo.targetAmount)}</span>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setSuccessInfo(null)}
+              className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 text-xs cursor-pointer"
+            >
+              Acknowledged & Continue
+            </button>
+          </motion.div>
         </div>
       )}
     </div>

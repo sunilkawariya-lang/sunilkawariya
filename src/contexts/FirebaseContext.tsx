@@ -368,6 +368,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
       await setDoc(doc(colRef, goal.id), sanitizeForFirestore(goal));
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}/goals`);
+      throw err;
     }
   };
 
@@ -383,6 +384,7 @@ export function FirebaseProvider({ children }: { children: ReactNode }) {
       await setDoc(doc(db, 'users', user.uid, 'goals', goal.id), sanitizeForFirestore(goal), { merge: true });
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, `users/${user.uid}/goals/${goal.id}`);
+      throw err;
     }
   };
 

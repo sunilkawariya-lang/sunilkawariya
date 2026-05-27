@@ -77,6 +77,7 @@ import { useFirebase } from './contexts/FirebaseContext';
 import PrivacyPolicy from './components/PrivacyPolicy';
 import TermsOfService from './components/TermsOfService';
 import GoogleVerification from './components/GoogleVerification';
+import PMSBasketLogo from './components/PMSBasketLogo';
 
 type Tab = 'dashboard' | 'portfolio' | 'goals' | 'tax' | 'ai' | 'portfolio-insight' | 'portfolio-refinement' | 'wallet' | 'news' | 'estate' | 'insurance' | 'summary' | 'reports' | 'financial-plan' | 'savings' | 'liability' | 'calculators' | 'retirement' | 'ips' | 'bank-accounts' | 'vault' | 'discussions' | 'investment-baskets' | 'consultancy' | 'media' | 'finance-intelligence' | 'wealth-services' | 'quick-payments' | 'backoffice' | 'privacy-policy' | 'terms-of-service' | 'google-verification';
 
@@ -111,6 +112,7 @@ export default function App() {
   const [editingMember, setEditingMember] = useState<FamilyMember | undefined>(undefined);
   const [isLiveUpdating, setIsLiveUpdating] = useState(false);
   const [currentIndexPage, setCurrentIndexPage] = useState(0);
+  const [unauthLegalTab, setUnauthLegalTab] = useState<'privacy' | 'terms' | null>(null);
 
   // Filtered Portfolio based on selected member
   const filteredPortfolio = useMemo(() => {
@@ -345,12 +347,18 @@ export default function App() {
   };
 
   const handleSaveGoal = async (goal: any) => {
-    // GoalPlanner usually checks if it exists, but the context handles it
     const exists = portfolio.goals.find(g => g.id === goal.id);
-    if (exists) {
-      await updateGoal(goal);
-    } else {
-      await addGoal(goal);
+    const goalLabel = goal.name || 'Strategic Goal';
+    try {
+      if (exists) {
+        await updateGoal(goal);
+        toast.success(`Strategic goal "${goalLabel}" has been successfully updated!`);
+      } else {
+        await addGoal(goal);
+        toast.success(`Strategic goal "${goalLabel}" has been successfully published!`);
+      }
+    } catch (err: any) {
+      toast.error(`Failed to publish strategic goal: ${err.message || err || 'Unknown error'}`);
     }
     setIsGoalModalOpen(false);
     setEditingGoal(null);
@@ -382,11 +390,9 @@ export default function App() {
           {/* Left Side: Benefits */}
           <div className="p-12 lg:p-16 bg-gradient-to-br from-white/10 to-transparent border-r border-white/5 hidden lg:block">
             <div className="flex items-center gap-3 mb-12">
-              <div className="bg-wealth-gold p-2 rounded-xl">
-                <IndianRupee className="text-wealth-navy w-5 h-5" />
-              </div>
+              <PMSBasketLogo iconOnly size={42} />
               <span className="font-bold text-2xl tracking-tight text-white">
-                RH <span className="text-wealth-gold font-light">Wealth</span>
+                PMS <span className="text-wealth-gold font-light">Basket</span>
               </span>
             </div>
 
@@ -426,19 +432,15 @@ export default function App() {
           {/* Right Side: Login Action */}
           <div className="p-12 lg:p-16 flex flex-col justify-center items-center text-center">
             <div className="lg:hidden flex items-center gap-3 mb-12">
-              <div className="bg-wealth-gold p-2 rounded-xl">
-                <IndianRupee className="text-wealth-navy w-5 h-5" />
-              </div>
+              <PMSBasketLogo iconOnly size={42} />
               <span className="font-bold text-2xl tracking-tight text-white">
-                RH <span className="text-wealth-gold font-light">Wealth</span>
+                PMS <span className="text-wealth-gold font-light">Basket</span>
               </span>
             </div>
 
-            <div className="bg-gradient-to-br from-wealth-gold to-amber-600 w-24 h-24 rounded-[2.5rem] flex items-center justify-center mb-10 shadow-2xl shadow-wealth-gold/20 rotate-12">
-              <LogIn className="text-white w-10 h-10 -rotate-12" />
-            </div>
+            <PMSBasketLogo size={130} className="mb-8 select-none" />
             
-            <h1 className="text-4xl font-bold text-white mb-4 tracking-tight">Welcome Back</h1>
+            <h1 className="text-3xl font-bold text-white mb-3 tracking-tight">Welcome Back</h1>
             <p className="text-slate-400 mb-12 leading-relaxed text-sm font-medium max-w-xs">
               Securely access your private vault and manage your global wealth portfolio.
             </p>
@@ -462,12 +464,67 @@ export default function App() {
                 </div>
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Trusted by 500+ HNI Families</p>
               </div>
-              <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-bold">
+              <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-bold mb-4">
                 Institutional Grade Security • 256-bit Encryption
               </p>
+              
+              <div className="flex justify-center items-center gap-1.5 text-[9px] text-slate-400 font-bold uppercase tracking-widest pt-4 border-t border-white/5">
+                <button 
+                  onClick={() => setUnauthLegalTab('privacy')}
+                  className="hover:text-wealth-gold hover:underline transition-colors cursor-pointer"
+                >
+                  Privacy Policy
+                </button>
+                <span className="text-slate-600 font-normal select-none">•</span>
+                <button 
+                  onClick={() => setUnauthLegalTab('terms')}
+                  className="hover:text-wealth-gold hover:underline transition-colors cursor-pointer"
+                >
+                  Terms of Service
+                </button>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Legal/Disclosure Overlay Modals for Public Homepage Access */}
+        {unauthLegalTab && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="bg-white rounded-[2rem] w-full max-w-4xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col"
+            >
+              <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50 shrink-0">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">
+                    {unauthLegalTab === 'privacy' ? 'Privacy Policy Disclosure' : 'Terms of Service Agreement'}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">Official regulatory document for member trust & safety</p>
+                </div>
+                <button 
+                  onClick={() => setUnauthLegalTab(null)}
+                  className="p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-400 hover:text-slate-600 cursor-pointer"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <div className="p-8 overflow-y-auto custom-scrollbar">
+                {unauthLegalTab === 'privacy' ? <PrivacyPolicy /> : <TermsOfService />}
+              </div>
+
+              <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end shrink-0">
+                <button 
+                  onClick={() => setUnauthLegalTab(null)}
+                  className="px-6 py-2.5 bg-wealth-navy hover:bg-wealth-navy/90 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all shadow-md cursor-pointer"
+                >
+                  Close & Return
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </div>
     );
   }
@@ -546,14 +603,7 @@ export default function App() {
       title: 'Administration',
       items: [
         { id: 'backoffice', label: 'Master Backoffice', icon: Shield },
-      ]
-    },
-    {
-      title: 'Legal & Compliance',
-      items: [
-        { id: 'privacy-policy', label: 'Privacy Policy', icon: ShieldCheck },
-        { id: 'terms-of-service', label: 'Terms of Service', icon: FileText },
-        { id: 'google-verification', label: 'Google Verification', icon: Shield },
+        { id: 'google-verification', label: 'Google Verification', icon: ShieldCheck },
       ]
     }
   ];
@@ -613,16 +663,14 @@ export default function App() {
       >
         <div className={`p-6 flex items-center ${isSidebarOpen ? 'justify-between' : 'justify-center'}`}>
           <div className="flex items-center gap-3">
-            <div className="bg-wealth-navy p-2.5 rounded-xl shadow-lg shadow-slate-200 shrink-0">
-              <IndianRupee className="text-white w-5 h-5" />
-            </div>
+            <PMSBasketLogo iconOnly size={38} className="shrink-0" />
             {isSidebarOpen && (
               <motion.span 
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="font-bold text-xl tracking-tight text-wealth-navy whitespace-nowrap"
+                className="font-bold text-xl tracking-tight text-slate-800 whitespace-nowrap flex items-center"
               >
-                RH <span className="text-wealth-gold font-light">Wealth</span>
+                PMS <span className="text-[#3E8043] ml-1 font-black">Basket</span>
               </motion.span>
             )}
           </div>

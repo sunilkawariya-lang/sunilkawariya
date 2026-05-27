@@ -100,6 +100,8 @@ export interface InsurancePolicy {
   maturityDate?: string;
   maturityAmount?: number;
   premiumPayingTerm?: number; // in years
+  policyTerm?: number; // in years
+  bonusAmount?: number; // cumulative projected bonus amount
   cashflows?: { date: string; amount: number; description: string }[];
   analysis?: InsuranceAnalysis;
 }
@@ -337,6 +339,11 @@ export interface Goal {
   category?: 'Education' | 'Retirement' | 'Marriage' | 'Home' | 'Car' | 'Vacation' | 'Other';
   multiYearFunding?: { year: number; amount: number }[];
   analysis?: GoalAnalysis;
+  retirementAge?: number;
+  currentAge?: number;
+  lifeExpectancy?: number;
+  annualExpenses?: number;
+  returnAfterRetirement?: number;
 }
 
 export type LiabilityType = 'Home Loan' | 'Car Loan' | 'Personal Loan' | 'Education Loan' | 'Credit Card' | 'Other';

@@ -536,9 +536,9 @@ const InvestmentBaskets: React.FC<InvestmentBasketsProps> = ({ portfolio }) => {
               that drive long-term value. It's about building a robust architecture for your wealth without the burden of daily tracking."
             </p>
             <div className="flex items-center gap-3 pt-4 border-t border-white/10">
-              <div className="w-10 h-10 rounded-full bg-indigo-400 flex items-center justify-center font-bold">RH</div>
+              <div className="w-10 h-10 rounded-full bg-indigo-400 flex items-center justify-center font-bold">PB</div>
               <div>
-                <p className="text-sm font-bold">RH Wealth Research</p>
+                <p className="text-sm font-bold">PMS Basket Research</p>
                 <p className="text-xs text-indigo-300">Investment Strategy Team</p>
               </div>
             </div>

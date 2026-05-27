@@ -20,7 +20,7 @@ export default function PrivacyPolicy() {
           Our Commitment to Your Privacy
         </h3>
         <p className="text-indigo-950 text-sm leading-relaxed">
-          At RH Wealth, we take your private personal and financial details exceptionally seriously. We employ institutional-grade 256-bit encryption and secure database controls. This Privacy Policy is designed to clearly detail how we collect, store, utilize, and protect your information, including information accessed via Google OAuth services.
+          At PMS Basket, we take your private personal and financial details exceptionally seriously. We employ institutional-grade 256-bit encryption and secure database controls. This Privacy Policy is designed to clearly detail how we collect, store, utilize, and protect your information, including information accessed via Google OAuth services.
         </p>
       </div>
 
@@ -53,7 +53,7 @@ export default function PrivacyPolicy() {
           <p className="font-semibold text-slate-800">How we handle Google user data:</p>
           <ul className="list-disc pl-5 space-y-1.5">
             <li><strong>API Permissions:</strong> We only request the minimum required permissions (specifically the <code>https://www.googleapis.com/auth/meetings.space.created</code> or <code>https://www.googleapis.com/auth/meet</code> scopes) necessary to negotiate meeting appointments and create dynamic space locations on your behalf.</li>
-            <li><strong>Transfer & Sharing:</strong> RH Wealth's use and transfer of information received from Google APIs to any other app will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline font-bold">Google API Services User Data Policy</a>, including the Limited Use requirements.</li>
+            <li><strong>Transfer & Sharing:</strong> PMS Basket's use and transfer of information received from Google APIs to any other app will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline font-bold">Google API Services User Data Policy</a>, including the Limited Use requirements.</li>
             <li><strong>No Sale, Sharing, or Advertising:</strong> We never sell, share, trade, or analyze your Google-derived data with advertising networks, third parties, or marketing databases.</li>
             <li><strong>Data Retention:</strong> Google tokens and meeting references are safely stored solely in your client-side memory or securely encrypted Firestore database instance. They can be deleted instantly by logging out or terminating your linked account profile.</li>
           </ul>

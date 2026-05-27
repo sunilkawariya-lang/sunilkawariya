@@ -20,7 +20,7 @@ export default function TermsOfService() {
           Agreement of Utilization
         </h3>
         <p className="text-amber-950 text-sm leading-relaxed">
-          Welcome to RH Wealth. By accessing, establishing an account with, or utilizing any of our automated portfolio, strategic advisory, or expert consultancy services, you agree to be bound by these Terms of Service. Please read them thoroughly.
+          Welcome to PMS Basket. By accessing, establishing an account with, or utilizing any of our automated portfolio, strategic advisory, or expert consultancy services, you agree to be bound by these Terms of Service. Please read them thoroughly.
         </p>
       </div>
 
@@ -32,7 +32,7 @@ export default function TermsOfService() {
         </h3>
         <div className="pl-9 text-slate-600 text-sm leading-relaxed space-y-2">
           <p>
-            RH Wealth is a technological financial workspace providing premium dashboards, automated tracking, real-time index references, dynamic estimators, and diagnostic tools to help users analyze and optimize their investments.
+            PMS Basket is a technological financial workspace providing premium dashboards, automated tracking, real-time index references, dynamic estimators, and diagnostic tools to help users analyze and optimize their investments.
           </p>
           <p className="text-rose-600 font-semibold">
             CRITICAL DISCLAIMER: All AI recommendations, indices tracking, asset allocation calculators, and wealth logs are provided strictly for educational and self-directed intelligence. We do NOT act as a licensed SEBI registered broker, certified legal estate planner, or tax auditor. Consultation sessions represent personal professional tips; final transactions carry systemic market risks.
@@ -79,7 +79,7 @@ export default function TermsOfService() {
         </h3>
         <div className="pl-9 text-slate-600 text-sm leading-relaxed">
           <p>
-            In no event shall RH Wealth, its affiliates, or operational agents be held liable for any investment losses, portfolio declines, regulatory penalties, or unforeseen systems outages arising from dynamic calculation models.
+            In no event shall PMS Basket, its affiliates, or operational agents be held liable for any investment losses, portfolio declines, regulatory penalties, or unforeseen systems outages arising from dynamic calculation models.
           </p>
         </div>
       </div>

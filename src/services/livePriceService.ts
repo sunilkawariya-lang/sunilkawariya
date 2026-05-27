@@ -331,7 +331,20 @@ export async function fetchLiveMarketData(symbols: string[], options: { force?: 
 
       const aiData = safeParse(response.text || '{}');
       Object.entries(aiData).forEach(([sym, info]: [string, any]) => {
-        result[sym] = info;
+        // Find closest match in remainingToFetch to support suffixes like .NS, .BO or casing changes
+        const normalizedSym = sym.trim().toLowerCase();
+        const matchedKey = remainingToFetch.find(r => {
+          const nr = r.trim().toLowerCase();
+          return nr === normalizedSym || 
+                 nr === normalizedSym.replace('.ns', '').replace('.bo', '') || 
+                 normalizedSym === nr.replace('.ns', '').replace('.bo', '');
+        });
+
+        if (matchedKey) {
+          result[matchedKey] = info;
+        } else {
+          result[sym] = info;
+        }
       });
     }
     

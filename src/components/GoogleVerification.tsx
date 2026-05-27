@@ -165,7 +165,7 @@ export default function GoogleVerification() {
                 <span className="flex items-center justify-center w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-[10px] font-bold shrink-0 mt-0.5">B</span>
                 <p className="text-xs text-slate-600">
                   <strong className="text-slate-950 font-bold block">App Information:</strong>
-                  Provide your App Name (e.g., <strong>RH Wealth</strong> or <strong>Investment Vault</strong>), support email, and a high-resolution logo.
+                  Provide your App Name (e.g., <strong>PMS Basket</strong> or <strong>Investment Vault</strong>), support email, and a high-resolution logo.
                 </p>
               </li>
               <li className="flex gap-3">
@@ -196,7 +196,7 @@ export default function GoogleVerification() {
                   <tr>
                     <th className="px-4 py-3 font-bold text-slate-500 w-[50%]">Scope URI</th>
                     <th className="px-4 py-3 font-bold text-slate-500 w-[20%]">Type</th>
-                    <th className="px-4 py-3 font-bold text-slate-500 w-[30%]">Purpose in RH Wealth</th>
+                    <th className="px-4 py-3 font-bold text-slate-500 w-[30%]">Purpose in PMS Basket</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">

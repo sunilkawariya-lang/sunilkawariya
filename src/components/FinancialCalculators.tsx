@@ -24,7 +24,8 @@ import {
   Car,
   Upload,
   Baby,
-  Sparkles
+  Sparkles,
+  AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts';
@@ -360,7 +361,7 @@ const TaxRuleInfo: React.FC<{ type: string }> = ({ type }) => {
   );
 };
 
-type CalculatorType = 'sip' | 'lumpsum' | 'emi' | 'retirement' | 'emergency' | 'fd' | 'stepup_sip' | 'swp' | 'ssy' | 'nps' | 'ppf' | 'epf' | 'rd' | 'delay' | 'target' | 'goals' | 'scss' | 'health_check' | 'gratuity' | 'retirement_readiness' | 'pomis' | 'rbi_bonds' | 'hra' | 'income_tax' | 'residency' | 'buy_vs_rent' | 'real_estate_gain' | 'esop' | 'car_lease' | 'capital_gains' | 'asset_allocation' | 'compounding' | 'hlv' | 'net_worth' | 'wealth_roadmap' | 'sip_with_emi' | 'child_education';
+type CalculatorType = 'sip' | 'lumpsum' | 'emi' | 'retirement' | 'emergency' | 'fd' | 'stepup_sip' | 'swp' | 'ssy' | 'nps' | 'ppf' | 'epf' | 'rd' | 'delay' | 'target' | 'goals' | 'scss' | 'health_check' | 'gratuity' | 'retirement_readiness' | 'pomis' | 'rbi_bonds' | 'hra' | 'income_tax' | 'residency' | 'buy_vs_rent' | 'real_estate_gain' | 'esop' | 'car_lease' | 'capital_gains' | 'asset_allocation' | 'compounding' | 'hlv' | 'net_worth' | 'wealth_roadmap' | 'sip_with_emi' | 'child_education' | 'loan_eligibility';
 
 interface FinancialCalculatorsProps {
   portfolio: PortfolioState;
@@ -368,6 +369,161 @@ interface FinancialCalculatorsProps {
 
 const FinancialCalculators: React.FC<FinancialCalculatorsProps> = ({ portfolio }) => {
   const [activeCalc, setActiveCalc] = useState<CalculatorType>('sip');
+
+  // --- Loan Eligibility Calculator Logic ---
+  const initialMonthlyIncome = useMemo(() => {
+    let incomeSum = 0;
+    (portfolio.incomes || []).forEach(inc => {
+      const amt = inc.amount || 0;
+      if (inc.frequency === 'Monthly') {
+        incomeSum += amt;
+      } else if (inc.frequency === 'Yearly') {
+        incomeSum += amt / 12;
+      } else if (inc.frequency === 'Quarterly') {
+        incomeSum += amt / 3;
+      } else if (inc.frequency === 'Half-Yearly') {
+        incomeSum += amt / 6;
+      } else {
+        if (inc.isRecurring) {
+          incomeSum += amt;
+        }
+      }
+    });
+    return incomeSum > 0 ? incomeSum : 150000; // default to 1.5 Lakh if 0
+  }, [portfolio.incomes]);
+
+  const initialMonthlyLiabilities = useMemo(() => {
+    return (portfolio.liabilities || []).reduce((sum, l) => sum + (l.emi || 0), 0);
+  }, [portfolio.liabilities]);
+
+  const [eligIncome, setEligIncome] = useState<number>(0);
+  const [eligLiability, setEligLiability] = useState<number>(0);
+  const [eligRate, setEligRate] = useState(8.5);
+  const [eligYears, setEligYears] = useState(25);
+  const [eligFOIR, setEligFOIR] = useState(50); // 50% default allowed EMI ratio
+
+  // Initialize form fields once defaults are computed
+  React.useEffect(() => {
+    if (eligIncome === 0) {
+      setEligIncome(initialMonthlyIncome);
+    }
+  }, [initialMonthlyIncome, eligIncome]);
+
+  React.useEffect(() => {
+    if (eligLiability === 0 && initialMonthlyLiabilities > 0) {
+      setEligLiability(initialMonthlyLiabilities);
+    }
+  }, [initialMonthlyLiabilities, eligLiability]);
+
+  const eligResults = useMemo(() => {
+    const activeIncome = eligIncome || initialMonthlyIncome;
+    const activeLiability = eligLiability;
+    
+    // Max allowed total EMI (FOIR limit)
+    const maxTotalEmiLimit = activeIncome * (eligFOIR / 100);
+    // Disposable monthly amount left for a new EMI
+    const maxNewEmiPlayroom = Math.max(0, maxTotalEmiLimit - activeLiability);
+    
+    // Present Value (Mortgage/Loan formula): PV = EMI * [(1 - (1+r)^-n) / r]
+    const r = eligRate / 12 / 100;
+    const n = eligYears * 12;
+    
+    let maxLoanAmount = 0;
+    if (r === 0) {
+      maxLoanAmount = maxNewEmiPlayroom * n;
+    } else {
+      const pvFactor = Math.pow(1 + r, -n);
+      maxLoanAmount = maxNewEmiPlayroom * ((1 - pvFactor) / r);
+    }
+    
+    const rawTotalRepayment = maxNewEmiPlayroom * n;
+    const totalInterestPayable = Math.max(0, rawTotalRepayment - maxLoanAmount);
+    
+    // Category Breakdowns
+    const categoriesDetails = [
+      {
+        name: 'Home Loan',
+        interest: 8.5,
+        defaultYears: 20,
+        desc: 'Ideal for property purchase. Typically lower rate, longest tenure.',
+        color: '#6366f1',
+        loanAmount: 0,
+        potentialEmi: 0
+      },
+      {
+        name: 'Car / Auto Loan',
+        interest: 9.5,
+        defaultYears: 7,
+        desc: 'Shorter tenure, vehicle purchase. Standard secured rate.',
+        color: '#3b82f6',
+        loanAmount: 0,
+        potentialEmi: 0
+      },
+      {
+        name: 'Personal Loan',
+        interest: 12.0,
+        defaultYears: 5,
+        desc: 'Unsecured, flexible use. Higher rate, shorter term.',
+        color: '#f43f5e',
+        loanAmount: 0,
+        potentialEmi: 0
+      },
+      {
+        name: 'Business/Edu Loan',
+        interest: 10.5,
+        defaultYears: 10,
+        desc: 'For professional expansion or education financing.',
+        color: '#10b981',
+        loanAmount: 0,
+        potentialEmi: 0
+      }
+    ].map(cat => {
+      const catR = cat.interest / 12 / 100;
+      const catN = cat.defaultYears * 12;
+      let catMaxLoan = 0;
+      if (catR === 0) {
+        catMaxLoan = maxNewEmiPlayroom * catN;
+      } else {
+        const catPvFactor = Math.pow(1 + catR, -catN);
+        catMaxLoan = maxNewEmiPlayroom * ((1 - catPvFactor) / catR);
+      }
+      return {
+        ...cat,
+        loanAmount: catMaxLoan,
+        potentialEmi: maxNewEmiPlayroom
+      };
+    });
+
+    // FOIR Debt to Income Health indicator
+    const currentFOIR = activeIncome > 0 ? ((activeLiability / activeIncome) * 100) : 0;
+    const projectedFOIR = activeIncome > 0 ? (((activeLiability + maxNewEmiPlayroom) / activeIncome) * 100) : 0;
+    
+    let healthZone: 'Safe' | 'Monitor' | 'Overburdened' = 'Safe';
+    if (currentFOIR > 50) {
+      healthZone = 'Overburdened';
+    } else if (currentFOIR > 35) {
+      healthZone = 'Monitor';
+    }
+    
+    return {
+      activeIncome,
+      activeLiability,
+      maxTotalEmiLimit,
+      maxNewEmiPlayroom,
+      maxLoanAmount,
+      totalInterestPayable,
+      totalRepayment: rawTotalRepayment,
+      currentFOIR,
+      projectedFOIR,
+      healthZone,
+      categoriesDetails,
+      pieData: [
+        { name: 'Existing Liabilities EMI', value: activeLiability, color: '#f43f5e' },
+        { name: 'Eligible Fresh EMI Limit', value: maxNewEmiPlayroom, color: '#10b981' },
+        { name: 'Unutilized Income Portion', value: Math.max(0, activeIncome - activeLiability - maxNewEmiPlayroom), color: '#cbd5e1' }
+      ]
+    };
+  }, [eligIncome, eligLiability, eligRate, eligYears, eligFOIR, initialMonthlyIncome, initialMonthlyLiabilities]);
 
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -2221,6 +2377,7 @@ const FinancialCalculators: React.FC<FinancialCalculatorsProps> = ({ portfolio }
     { id: 'lumpsum', label: 'Lumpsum', icon: IndianRupee, color: 'text-blue-600', bg: 'bg-blue-50' },
     { id: 'swp', label: 'SWP Calculator', icon: ArrowRight, color: 'text-indigo-600', bg: 'bg-indigo-50' },
     { id: 'emi', label: 'Loan EMI', icon: Landmark, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { id: 'loan_eligibility', label: 'Loan Eligibility', icon: Landmark, color: 'text-violet-600', bg: 'bg-violet-50' },
     { id: 'retirement', label: 'Retirement', icon: Target, color: 'text-amber-600', bg: 'bg-amber-50' },
     { id: 'target', label: 'Goal Target', icon: Target, color: 'text-emerald-800', bg: 'bg-emerald-100' },
     { id: 'goals', label: 'Goal Planner', icon: Target, color: 'text-rose-600', bg: 'bg-rose-50' },
@@ -8058,6 +8215,280 @@ const FinancialCalculators: React.FC<FinancialCalculatorsProps> = ({ portfolio }
                            ['Total Invested (Step-Up)', formatCurrency(childEduResults.totalInvestedStepUp)]
                          ]}
                        />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeCalc === 'loan_eligibility' && (
+                <div className="p-8">
+                  <div className="flex flex-col md:flex-row items-start justify-between gap-6 mb-8 border-b border-slate-100 pb-6">
+                    <div className="max-w-2xl font-sans">
+                      <h3 className="text-3xl font-black text-violet-600 flex items-center gap-3">
+                        <Landmark className="text-violet-600" size={32} />
+                        Loan Eligibility Checker
+                      </h3>
+                      <p className="text-slate-500 mt-2 text-lg">
+                        Determine the maximum loan amount you can comfortably afford using your actual net income and active obligations.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 font-sans">
+                    <div className="lg:col-span-1 space-y-8">
+                      <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100 space-y-6">
+                        <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+                          <span className="text-sm font-bold text-slate-700">Financial Profile</span>
+                          <button
+                            onClick={() => {
+                              setEligIncome(initialMonthlyIncome);
+                              setEligLiability(initialMonthlyLiabilities);
+                            }}
+                            className="text-xs font-bold text-violet-600 hover:text-violet-700 bg-white border border-violet-100 px-3 py-1.5 rounded-full shadow-sm hover:shadow-md transition-all active:scale-95"
+                          >
+                            Sync Profile Baselines
+                          </button>
+                        </div>
+
+                        <div className="space-y-6">
+                          <PrecisionInput 
+                            label="Monthly Net Income"
+                            value={eligIncome}
+                            onChange={setEligIncome}
+                            min={1000}
+                            max={5000000}
+                            step={5000}
+                            prefix="₹"
+                          />
+                          <div className="flex gap-2 text-[11px] text-slate-500 font-medium -mt-2 bg-emerald-50 text-emerald-700 p-2.5 rounded-xl border border-emerald-100">
+                            <span className="font-bold">✨ Baseline:</span>
+                            <span>Registered Income: {formatCurrency(initialMonthlyIncome)} / month</span>
+                          </div>
+
+                          <PrecisionInput 
+                            label="Existing Monthly EMIs (Liabilities)"
+                            value={eligLiability}
+                            onChange={setEligLiability}
+                            min={0}
+                            max={2000000}
+                            step={1000}
+                            prefix="₹"
+                          />
+                          <div className="flex gap-2 text-[11px] text-slate-500 font-medium -mt-2 bg-rose-50 text-rose-700 p-2.5 rounded-xl border border-rose-100">
+                            <span className="font-bold">✨ Baseline:</span>
+                            <span>Active Obligations: {formatCurrency(initialMonthlyLiabilities)} / month</span>
+                          </div>
+
+                          <PrecisionInput 
+                            label="Allowed FOIR Cap (%)"
+                            value={eligFOIR}
+                            onChange={setEligFOIR}
+                            min={10}
+                            max={80}
+                            step={5}
+                            suffix="%"
+                          />
+
+                          <PrecisionInput 
+                            label="Prospective Loan Rate (%)"
+                            value={eligRate}
+                            onChange={setEligRate}
+                            min={4}
+                            max={25}
+                            step={0.1}
+                            suffix="%"
+                          />
+
+                          <PrecisionInput 
+                            label="Prospective Loan Tenure (Years)"
+                            value={eligYears}
+                            onChange={setEligYears}
+                            min={1}
+                            max={30}
+                            step={1}
+                            suffix="Y"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="lg:col-span-2 space-y-8">
+                      {/* Primary Results Display */}
+                      <div className="bg-violet-50/50 p-8 rounded-3xl border border-violet-100/60 font-sans">
+                        <p className="text-xs font-black text-violet-600 uppercase tracking-widest mb-1">Max Affordable Loan Potential</p>
+                        <h4 className="text-4xl font-black text-slate-900 mb-6">{formatCurrency(eligResults.maxLoanAmount)}</h4>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div className="bg-white p-5 rounded-2xl border border-slate-100">
+                            <p className="text-xs font-bold text-slate-500">Max New EMI Allowance</p>
+                            <p className="text-xl font-bold text-emerald-600 mt-1">{formatCurrency(eligResults.maxNewEmiPlayroom)}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">Under {eligFOIR}% FOIR rules</p>
+                          </div>
+                          <div className="bg-white p-5 rounded-2xl border border-slate-100">
+                            <p className="text-xs font-bold text-slate-500">Total Interest Component</p>
+                            <p className="text-xl font-bold text-slate-800 mt-1">{formatCurrency(eligResults.totalInterestPayable)}</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">Calculated over tenure</p>
+                          </div>
+                          <div className="bg-white p-5 rounded-2xl border border-slate-100">
+                            <p className="text-xs font-bold text-slate-500">Debt Obligations (FOIR)</p>
+                            <p className={`text-xl font-bold mt-1 ${
+                              eligResults.healthZone === 'Safe' ? 'text-emerald-600' :
+                              eligResults.healthZone === 'Monitor' ? 'text-amber-600' : 'text-rose-600'
+                            }`}>{eligResults.currentFOIR.toFixed(1)}%</p>
+                            <p className="text-[10px] text-slate-400 mt-0.5">Zone: {eligResults.healthZone}</p>
+                          </div>
+                        </div>
+
+                        {/* Warnings if no playroom exists */}
+                        {eligResults.maxNewEmiPlayroom <= 0 && (
+                          <div className="mt-6 flex items-start gap-3 bg-red-50 text-rose-700 p-4 rounded-2xl border border-red-100">
+                            <AlertCircle size={20} className="mt-0.5 shrink-0" />
+                            <div>
+                              <p className="text-sm font-bold">Ineligible For Additional Debt</p>
+                              <p className="text-xs text-rose-600/95 mt-1 font-medium leading-relaxed">
+                                Your existing liabilities ({formatCurrency(eligResults.activeLiability)}) consume {eligResults.currentFOIR.toFixed(1)}% of your monthly net income, which exceeds your set FOIR ceiling of {eligFOIR}%. Close your existing obligations or declare alternative revenue paths to establish buying playroom.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Side by Side Multi-Type Analysis */}
+                      <div className="space-y-4 font-sans">
+                        <h4 className="font-extrabold text-slate-800 text-lg">Benchmark Packages & Tenures Comparison</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {eligResults.categoriesDetails.map((category) => (
+                            <div key={category.name} className="bg-white border border-slate-100 p-5 rounded-2xl hover:border-violet-200 transition-all flex flex-col justify-between">
+                              <div>
+                                <div className="flex items-center justify-between border-b border-rose-50 pb-3 mb-3">
+                                  <span className="font-extrabold text-[#111827] text-md">{category.name}</span>
+                                  <span className="text-xs font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">{category.interest}% Interest</span>
+                                </div>
+                                <p className="text-xs text-slate-500 leading-relaxed mb-4">{category.desc}</p>
+                              </div>
+
+                              <div className="bg-slate-50/70 p-3.5 rounded-xl space-y-2">
+                                <div className="flex justify-between text-xs font-semibold">
+                                  <span className="text-slate-500">Tenure Benchmark:</span>
+                                  <span className="text-slate-800 font-extrabold">{category.defaultYears} Years</span>
+                                </div>
+                                <div className="flex justify-between text-xs font-semibold border-t border-slate-100 pt-2">
+                                  <span className="text-slate-500 font-bold">Max Loan Affordability:</span>
+                                  <span className="text-violet-600 font-black">{formatCurrency(category.loanAmount)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Pie chart analysis & Dynamic Guidance */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 font-sans">
+                        <div className="border border-slate-100 rounded-3xl p-6 bg-white space-y-4">
+                          <h4 className="font-bold text-slate-800 text-sm">Monthly Outflow Allocation</h4>
+                          <div className="h-44">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie
+                                  data={eligResults.pieData}
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={50}
+                                  outerRadius={70}
+                                  paddingAngle={5}
+                                  dataKey="value"
+                                >
+                                  {eligResults.pieData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                  ))}
+                                </Pie>
+                                <Tooltip formatter={(value: number) => formatCurrency(value)} />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="grid grid-cols-3 gap-1 text-[10px] text-center font-bold">
+                            <div>
+                              <div className="w-2.5 h-2.5 mx-auto rounded-full bg-[#f43f5e] mb-1"></div>
+                              <span className="text-slate-500 block">Existing Debt EMI</span>
+                              <span className="text-[#111827] block">{formatCurrency(eligResults.activeLiability)}</span>
+                            </div>
+                            <div>
+                              <div className="w-2.5 h-2.5 mx-auto rounded-full bg-[#10b981] mb-1"></div>
+                              <span className="text-slate-500 block">Fresh EMI Limit</span>
+                              <span className="text-[#111827] block">{formatCurrency(eligResults.maxNewEmiPlayroom)}</span>
+                            </div>
+                            <div>
+                              <div className="w-2.5 h-2.5 mx-auto rounded-full bg-[#cbd5e1] mb-1"></div>
+                              <span className="text-slate-500 block">Savings & Living</span>
+                              <span className="text-[#111827] block">{formatCurrency(Math.max(0, eligResults.activeIncome - eligResults.activeLiability - eligResults.maxNewEmiPlayroom))}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Strategic Tips Panel */}
+                        <div className="border border-slate-100 rounded-3xl p-6 bg-white space-y-4 flex flex-col justify-between">
+                          <div>
+                            <h4 className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                              <Sparkles size={16} className="text-amber-500" />
+                              How to Enhance Your Loan Eligibility
+                            </h4>
+                            <p className="text-xs text-slate-400 mt-1 mb-4 leading-relaxed">Consider these expert techniques to borrow more if your maximum eligibility is insufficient:</p>
+                            <ul className="space-y-3 text-xs leading-relaxed text-slate-600">
+                              <li className="flex items-start gap-2.5">
+                                <span className="p-1 rounded-full bg-emerald-50 text-emerald-600 shrink-0 mt-0.5">✓</span>
+                                <span><strong>Add Co-Applicant Income:</strong> Including your working spouse or parent adds their income to the pool, dramatically increasing Max EMI headroom.</span>
+                              </li>
+                              <li className="flex items-start gap-2.5">
+                                <span className="p-1 rounded-full bg-emerald-50 text-emerald-600 shrink-0 mt-0.5">✓</span>
+                                <span><strong>Consolidate & Close Existing Debt:</strong> Prepaying small active credit card/personal loans frees up existing monthly EMIs, transferring that entire portion straight to your fresh eligibility pool.</span>
+                              </li>
+                              <li className="flex items-start gap-2.5">
+                                <span className="p-1 rounded-full bg-emerald-50 text-emerald-600 shrink-0 mt-0.5">✓</span>
+                                <span><strong>Extend Debt Tenure:</strong> Selecting a 30-year option rather than 20-year home tenure reduces monthly pressure, letting you qualify for larger lump amounts (though compounding total interest will rise).</span>
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+
+                      <AIRecommendation 
+                        calculatorType="Loan Eligibility"
+                        inputs={{
+                          monthlyIncome: eligResults.activeIncome,
+                          existingEMI: eligResults.activeLiability,
+                          proposedRate: eligRate,
+                          proposedYears: eligYears,
+                          foirRatio: eligFOIR
+                        }}
+                        results={{
+                          maxFreshEmiRoom: eligResults.maxNewEmiPlayroom,
+                          maxAffordableLoan: eligResults.maxLoanAmount,
+                          totalInterest: eligResults.totalInterestPayable,
+                          currentFoir: eligResults.currentFOIR,
+                          projectedFoir: eligResults.projectedFOIR,
+                          loanZone: eligResults.healthZone
+                        }}
+                      />
+
+                      <ExportButtons 
+                        title="Loan Eligibility Analysis"
+                        onDownload={handleDownloadCalculatorReport}
+                        inputs={[
+                          ['Monthly Net Income', formatCurrency(eligResults.activeIncome)],
+                          ['Active Existing EMIs', formatCurrency(eligResults.activeLiability)],
+                          ['Allowed FOIR Cap', `${eligFOIR}%`],
+                          ['Prospective Interest Rate', `${eligRate}%`],
+                          ['Prospective Loan Tenure', `${eligYears} Years`]
+                        ]}
+                        results={[
+                          ['Disposable EMI for New Loan', formatCurrency(eligResults.maxNewEmiPlayroom)],
+                          ['Maximum Eligible Loan Amount', formatCurrency(eligResults.maxLoanAmount)],
+                          ['Total Interest Component', formatCurrency(eligResults.totalInterestPayable)],
+                          ['Total Cumulative Outflow', formatCurrency(eligResults.totalRepayment)],
+                          ['Current Debt-to-Income (FOIR)', `${eligResults.currentFOIR.toFixed(1)}%`],
+                          ['Projected Debt-to-Income', `${eligResults.projectedFOIR.toFixed(1)}%`]
+                        ]}
+                      />
                     </div>
                   </div>
                 </div>

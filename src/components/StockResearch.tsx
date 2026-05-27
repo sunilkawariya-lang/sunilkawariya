@@ -538,9 +538,16 @@ const TrendChart: React.FC<{ title: string; data: { year: string; value: number 
   </div>
 );
 
+// Pre-generate mock companies with original basePrice & baseRelativeValuation markers for dynamic analysis
+const MOCK_COMPANIES_FOR_LIVE = MOCK_COMPANIES.map(company => ({
+  ...company,
+  basePrice: company.currentPrice,
+  baseRelativeValuation: company.scores?.relativeValuation ?? 70,
+}));
+
 const StockResearch: React.FC = () => {
-  const [companies, setCompanies] = useState<CompanyResearch[]>(MOCK_COMPANIES);
-  const [selectedCompanyId, setSelectedCompanyId] = useState(MOCK_COMPANIES[0].id);
+  const [companies, setCompanies] = useState<CompanyResearch[]>(MOCK_COMPANIES_FOR_LIVE);
+  const [selectedCompanyId, setSelectedCompanyId] = useState(MOCK_COMPANIES_FOR_LIVE[0].id);
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -560,6 +567,9 @@ const StockResearch: React.FC = () => {
           currentPrice: live.price,
           change: live.prevClose ? live.price - live.prevClose : c.change,
           changePercent: live.prevClose ? ((live.price - live.prevClose) / live.prevClose) * 100 : c.changePercent,
+          // Retain base values on future live syncs
+          basePrice: (c as any).basePrice || c.currentPrice || live.price,
+          baseRelativeValuation: (c as any).baseRelativeValuation || (c.scores?.relativeValuation ?? 70)
         };
       }));
     } catch (error) {
@@ -581,9 +591,82 @@ const StockResearch: React.FC = () => {
     );
   }, [searchQuery, companies]);
 
-  const company = useMemo(() => 
-    companies.find(c => c.id === selectedCompanyId) || companies[0]
-  , [selectedCompanyId, companies]);
+  // Dynamically augment company properties based on the live current price
+  const company = useMemo(() => {
+    const rawCompany = companies.find(c => c.id === selectedCompanyId) || companies[0];
+    if (!rawCompany) return rawCompany;
+
+    const basePrice = (rawCompany as any).basePrice || rawCompany.currentPrice || 1;
+    const currentPrice = rawCompany.currentPrice || basePrice;
+
+    // 1. Dynamic PE ratios for current/projected periods (year >= 2024 or projected)
+    const financials = rawCompany.financials.map(row => {
+      const yearNum = parseInt(row.year);
+      if ((yearNum >= 2024 || row.isProjection) && row.eps > 0) {
+        return {
+          ...row,
+          peRatio: Math.round((currentPrice / row.eps) * 10) / 10
+        };
+      }
+      return row;
+    });
+
+    // 2. Dynamic relative valuation and overall rating scorecards
+    const baseRelativeValuation = (rawCompany as any).baseRelativeValuation || (rawCompany.scores?.relativeValuation ?? 70);
+    const priceRatio = currentPrice / basePrice;
+    
+    let relativeValuation = baseRelativeValuation;
+    if (priceRatio > 1) {
+      relativeValuation = Math.max(10, Math.round(baseRelativeValuation - (priceRatio - 1) * 60));
+    } else if (priceRatio < 1) {
+      relativeValuation = Math.min(100, Math.round(baseRelativeValuation + (1 - priceRatio) * 60));
+    }
+
+    let scores = rawCompany.scores;
+    if (scores) {
+      const overall = Math.round(
+        (scores.corporateGovernance + 
+         scores.marketCap + 
+         scores.earnings + 
+         scores.fundamental + 
+         relativeValuation + 
+         scores.risk + 
+         scores.priceMomentum + 
+         scores.futureOutlook) / 8
+      );
+      scores = {
+        ...scores,
+        relativeValuation,
+        overall
+      };
+    }
+
+    // 3. Dynamic Technical targets and stop-losses scaling keeping original ratios
+    const technicalAnalysis = { ...rawCompany.technicalAnalysis };
+    if (technicalAnalysis) {
+      (['shortTerm', 'mediumTerm', 'longTerm'] as const).forEach(term => {
+        const termData = technicalAnalysis[term];
+        if (termData) {
+          const targetOffsetRatio = termData.target / basePrice;
+          const stopLossOffsetRatio = termData.stopLoss / basePrice;
+          technicalAnalysis[term] = {
+            ...termData,
+            target: Math.round(currentPrice * targetOffsetRatio * 100) / 100,
+            stopLoss: Math.round(currentPrice * stopLossOffsetRatio * 100) / 100
+          };
+        }
+      });
+    }
+
+    return {
+      ...rawCompany,
+      financials,
+      scores,
+      technicalAnalysis,
+      basePrice,
+      baseRelativeValuation
+    };
+  }, [selectedCompanyId, companies]);
 
   const isGlobal = useMemo(() => {
     if (company.currency) return company.currency === 'USD';
@@ -607,13 +690,19 @@ const StockResearch: React.FC = () => {
     try {
       const result = await fetchStockResearch(searchQuery);
       if (result && result.name) {
+        // Enrich the research result with baselines for real-time dynamic analysis
+        const enrichedResult = {
+          ...result,
+          basePrice: result.currentPrice,
+          baseRelativeValuation: result.scores?.relativeValuation ?? 70
+        };
         // Add to companies list if not already there
         setCompanies(prev => {
-          const exists = prev.find(c => c.id === result.id || c.ticker === result.ticker);
+          const exists = prev.find(c => c.id === enrichedResult.id || c.ticker === enrichedResult.ticker);
           if (exists) return prev;
-          return [result, ...prev];
+          return [enrichedResult, ...prev];
         });
-        setSelectedCompanyId(result.id);
+        setSelectedCompanyId(enrichedResult.id);
         setSearchQuery(''); // Clear search after success
       }
     } catch (error) {
@@ -783,10 +872,20 @@ const StockResearch: React.FC = () => {
                 <p className="text-4xl font-black text-wealth-gold">{company.scores.overall}<span className="text-lg text-white/40">/100</span></p>
               </div>
             )}
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">Potential Upside</p>
-            <p className="text-5xl font-bold text-emerald-400">
-              +{Math.round(((company.oneYearTarget - company.currentPrice) / company.currentPrice) * 100)}%
-            </p>
+            {(() => {
+              const upside = Math.round(((company.oneYearTarget - company.currentPrice) / company.currentPrice) * 100);
+              const isPositive = upside >= 0;
+              return (
+                <>
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-2">
+                    {isPositive ? "Potential Upside" : "Potential Downside"}
+                  </p>
+                  <p className={`text-5xl font-bold ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {isPositive ? '+' : ''}{upside}%
+                  </p>
+                </>
+              );
+            })()}
             <div className="mt-6 pt-6 border-t border-white/10">
               <button className="w-full py-3 bg-wealth-gold text-wealth-navy rounded-xl text-xs font-bold hover:bg-amber-400 transition-all shadow-lg">
                 View Full Report
@@ -1328,7 +1427,7 @@ const StockResearch: React.FC = () => {
                     <ShieldCheck size={14} />
                     Investor Decision Matrix
                   </div>
-                  <h3 className="text-4xl font-bold tracking-tight">The RH Wealth Perspective</h3>
+                  <h3 className="text-4xl font-bold tracking-tight">The PMS Basket Perspective</h3>
                   <p className="text-slate-300 text-xl leading-relaxed font-medium">
                     {company.investorInsight}
                   </p>

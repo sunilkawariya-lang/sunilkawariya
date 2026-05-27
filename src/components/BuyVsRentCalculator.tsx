@@ -689,10 +689,10 @@ const BuyVsRentCalculator: React.FC = () => {
               <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-6">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-wealth-gold font-bold border border-white/10">
-                    RH
+                    PB
                   </div>
                   <div>
-                    <p className="text-sm font-bold">RH Wealth Advisory Team</p>
+                    <p className="text-sm font-bold">PMS Basket Advisory Team</p>
                     <p className="text-[10px] text-slate-500 uppercase tracking-widest">Institutional Grade Analysis</p>
                   </div>
                 </div>

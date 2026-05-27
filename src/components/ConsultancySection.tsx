@@ -634,7 +634,7 @@ const ConsultancySection: React.FC = () => {
                 className="px-8 py-4 bg-wealth-gold text-wealth-navy font-bold rounded-2xl hover:scale-105 transition-all shadow-xl shadow-wealth-gold/20 flex items-center gap-3 group"
               >
                 <Sparkles size={20} className="group-hover:rotate-12 transition-transform" />
-                Join RH Wealth Elite Membership
+                Join PMS Basket Elite Membership
               </button>
             </div>
           </div>
@@ -841,7 +841,7 @@ const ConsultancySection: React.FC = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <h2 className="text-3xl font-bold tracking-tight">RH Wealth <span className="text-wealth-gold">Elite</span></h2>
+                    <h2 className="text-3xl font-bold tracking-tight">PMS Basket <span className="text-wealth-gold">Elite</span></h2>
                     <p className="text-slate-400 text-sm">The ultimate financial companion for HNI families.</p>
                   </div>
 
@@ -945,7 +945,7 @@ const ConsultancySection: React.FC = () => {
                 <div className="mt-10 space-y-4">
                   <button 
                     onClick={() => {
-                      toast.success("Welcome to RH Wealth Elite!");
+                      toast.success("Welcome to PMS Basket Elite!");
                       setIsMembershipModalOpen(false);
                     }}
                     className="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-200"

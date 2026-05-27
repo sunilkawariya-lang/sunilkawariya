@@ -354,7 +354,7 @@ const InsuranceManager: React.FC<InsuranceManagerProps> = ({ portfolio, setPortf
                       )}
 
                       {/* Non-Term Plan Details */}
-                      {(policy.maturityAmount || policy.cashflows) && (
+                      {(policy.maturityAmount || policy.premiumPayingTerm || policy.policyTerm || policy.bonusAmount || policy.cashflows) && (
                         <div className="mt-6 pt-6 border-t border-dashed border-slate-200">
                           <div className="flex items-center justify-between mb-4">
                             <h5 className="text-sm font-bold text-slate-900 flex items-center gap-2">
@@ -368,16 +368,30 @@ const InsuranceManager: React.FC<InsuranceManagerProps> = ({ portfolio, setPortf
                             )}
                           </div>
                           
-                          {policy.maturityAmount && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                              <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
-                                <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1">Estimated Maturity Amount</p>
-                                <p className="text-xl font-bold text-emerald-700">{formatCurrency(policy.maturityAmount)}</p>
-                              </div>
+                          {(policy.maturityAmount || policy.premiumPayingTerm || policy.policyTerm || policy.bonusAmount) && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                              {policy.maturityAmount && (
+                                <div className="p-4 bg-emerald-50/50 rounded-2xl border border-emerald-100/50">
+                                  <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider mb-1">Basic Maturity Amt</p>
+                                  <p className="text-lg font-bold text-emerald-700">{formatCurrency(policy.maturityAmount)}</p>
+                                </div>
+                              )}
+                              {policy.policyTerm && (
+                                <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
+                                  <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">Policy Term</p>
+                                  <p className="text-lg font-bold text-indigo-700">{policy.policyTerm} Years</p>
+                                </div>
+                              )}
                               {policy.premiumPayingTerm && (
                                 <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/50">
                                   <p className="text-[10px] font-bold text-indigo-600 uppercase tracking-wider mb-1">Premium Paying Term</p>
-                                  <p className="text-xl font-bold text-indigo-700">{policy.premiumPayingTerm} Years</p>
+                                  <p className="text-lg font-bold text-indigo-700">{policy.premiumPayingTerm} Years</p>
+                                </div>
+                              )}
+                              {policy.bonusAmount && (
+                                <div className="p-4 bg-purple-50/50 rounded-2xl border border-purple-100/50">
+                                  <p className="text-[10px] font-bold text-purple-600 uppercase tracking-wider mb-1">Projected Total Bonus</p>
+                                  <p className="text-lg font-bold text-purple-700">{formatCurrency(policy.bonusAmount)}</p>
                                 </div>
                               )}
                             </div>

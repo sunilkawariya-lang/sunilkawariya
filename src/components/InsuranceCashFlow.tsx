@@ -24,7 +24,12 @@ const InsuranceCashFlow: React.FC<InsuranceCashFlowProps> = ({ portfolio }) => {
       ? portfolio.insurances 
       : portfolio.insurances.filter(p => p.id === selectedPolicyId);
 
-    const yearData: Record<number, { year: number; premiumOutflow: number; benefitsInflow: number }> = {};
+    const yearData: Record<number, { 
+      year: number; 
+      premiumOutflow: number; 
+      benefitsInflow: number; 
+      breakdown: { policyName: string; type: 'premium' | 'payout' | 'bonus'; amount: number }[];
+    }> = {};
 
     policiesToAnalyze.forEach(policy => {
       const start = new Date(policy.startDate);
@@ -36,21 +41,66 @@ const InsuranceCashFlow: React.FC<InsuranceCashFlowProps> = ({ portfolio }) => {
         policy.premiumFrequency === 'Quarterly' ? 3 :
         policy.premiumFrequency === 'Half-Yearly' ? 6 : 12;
 
-      // 1. Calculate Premiums (History + Future)
+      // 1. Calculate Premiums (History + Future) - up to Premium Paying Term
       let currentDate = start;
+      const startYear = getYear(start);
+      // PPT default matches entire term in years if PPT isn't specified
+      const termYears = Math.max(1, Math.round(differenceInMonths(end, start) / 12));
+      const ppt = policy.type === 'Endowment' || policy.type === 'MoneyBack' 
+        ? (policy.premiumPayingTerm || termYears)
+        : termYears;
+
       while (isBefore(currentDate, end)) {
         const year = getYear(currentDate);
-        if (!yearData[year]) yearData[year] = { year, premiumOutflow: 0, benefitsInflow: 0 };
-        yearData[year].premiumOutflow += premium;
+        if (!yearData[year]) yearData[year] = { year, premiumOutflow: 0, benefitsInflow: 0, breakdown: [] };
+        
+        if (year < startYear + ppt) {
+          yearData[year].premiumOutflow += premium;
+          
+          const existing = yearData[year].breakdown.find(b => b.policyName === policy.name && b.type === 'premium');
+          if (existing) {
+            existing.amount += premium;
+          } else {
+            yearData[year].breakdown.push({
+              policyName: policy.name,
+              type: 'premium',
+              amount: premium
+            });
+          }
+        }
         currentDate = addMonths(currentDate, intervalMonths);
       }
 
-      // 2. Maturity Benefit
+      // 2. Maturity Benefit + Cumulative Bonus
       if (policy.maturityAmount && policy.maturityDate) {
         const matDate = new Date(policy.maturityDate);
         const matYear = getYear(matDate);
-        if (!yearData[matYear]) yearData[matYear] = { year: matYear, premiumOutflow: 0, benefitsInflow: 0 };
+        if (!yearData[matYear]) yearData[matYear] = { year: matYear, premiumOutflow: 0, benefitsInflow: 0, breakdown: [] };
         yearData[matYear].benefitsInflow += policy.maturityAmount;
+        yearData[matYear].breakdown.push({
+          policyName: `${policy.name} (Maturity)`,
+          type: 'payout',
+          amount: policy.maturityAmount
+        });
+
+        if (policy.bonusAmount) {
+          yearData[matYear].benefitsInflow += policy.bonusAmount;
+          yearData[matYear].breakdown.push({
+            policyName: `${policy.name} (Projected Bonus)`,
+            type: 'bonus',
+            amount: policy.bonusAmount
+          });
+        }
+      } else if (policy.bonusAmount && policy.expiryDate) {
+        const expDate = new Date(policy.expiryDate);
+        const expYear = getYear(expDate);
+        if (!yearData[expYear]) yearData[expYear] = { year: expYear, premiumOutflow: 0, benefitsInflow: 0, breakdown: [] };
+        yearData[expYear].benefitsInflow += policy.bonusAmount;
+        yearData[expYear].breakdown.push({
+          policyName: `${policy.name} (Projected Bonus)`,
+          type: 'bonus',
+          amount: policy.bonusAmount
+        });
       }
 
       // 3. Survival Benefits / Other Cashflows
@@ -58,8 +108,13 @@ const InsuranceCashFlow: React.FC<InsuranceCashFlowProps> = ({ portfolio }) => {
         policy.cashflows.forEach(cf => {
           const cfDate = new Date(cf.date);
           const cfYear = getYear(cfDate);
-          if (!yearData[cfYear]) yearData[cfYear] = { year: cfYear, premiumOutflow: 0, benefitsInflow: 0 };
+          if (!yearData[cfYear]) yearData[cfYear] = { year: cfYear, premiumOutflow: 0, benefitsInflow: 0, breakdown: [] };
           yearData[cfYear].benefitsInflow += cf.amount;
+          yearData[cfYear].breakdown.push({
+            policyName: `${policy.name} (${cf.description})`,
+            type: 'payout',
+            amount: cf.amount
+          });
         });
       }
     });
@@ -208,9 +263,11 @@ const InsuranceCashFlow: React.FC<InsuranceCashFlowProps> = ({ portfolio }) => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {cashFlowData.map((row) => (
-                <tr key={row.year} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-6 py-4 font-medium text-slate-900">{row.year}</td>
-                  <td className="px-6 py-4">
+                <tr key={row.year} className="hover:bg-slate-50/50 transition-colors border-b border-slate-100">
+                  <td className="px-6 py-4 font-bold text-slate-900 vertical-align-top">
+                    <div>{row.year}</div>
+                  </td>
+                  <td className="px-6 py-4 vertical-align-top">
                     <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
                       row.year < currentYear ? 'bg-slate-100 text-slate-500' : 
                       row.year === currentYear ? 'bg-indigo-50 text-indigo-700' : 'bg-emerald-50 text-emerald-700'
@@ -218,9 +275,24 @@ const InsuranceCashFlow: React.FC<InsuranceCashFlowProps> = ({ portfolio }) => {
                       {row.year < currentYear ? 'Historic' : row.year === currentYear ? 'Current' : 'Future'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right text-rose-600 font-medium">-{formatCurrency(row.premiumOutflow)}</td>
-                  <td className="px-6 py-4 text-right text-emerald-600 font-medium">{row.benefitsInflow > 0 ? `+${formatCurrency(row.benefitsInflow)}` : '—'}</td>
-                  <td className={`px-6 py-4 text-right font-bold ${
+                  <td className="px-6 py-4 text-right text-rose-600 font-semibold vertical-align-top">
+                    <div className="font-bold">-{formatCurrency(row.premiumOutflow)}</div>
+                    {row.premiumOutflow > 0 && row.breakdown.filter(b => b.type === 'premium').map((b, idx) => (
+                      <div key={idx} className="text-[10px] text-slate-400 font-medium mt-1">
+                        <span className="opacity-75">{b.policyName}:</span> -{formatCurrency(b.amount)}
+                      </div>
+                    ))}
+                  </td>
+                  <td className="px-6 py-4 text-right text-emerald-600 font-semibold vertical-align-top">
+                    <div className="font-bold">{row.benefitsInflow > 0 ? `+${formatCurrency(row.benefitsInflow)}` : '—'}</div>
+                    {row.benefitsInflow > 0 && row.breakdown.filter(b => b.type !== 'premium').map((b, idx) => (
+                      <div key={idx} className="text-[10px] text-indigo-600 font-semibold mt-1">
+                        <span className="text-slate-500 font-medium">{b.policyName}</span>: +{formatCurrency(b.amount)}
+                        <span className="ml-1 px-1 bg-indigo-50 text-[9px] text-indigo-700 rounded text-uppercase font-black">{b.type}</span>
+                      </div>
+                    ))}
+                  </td>
+                  <td className={`px-6 py-4 text-right font-black vertical-align-top ${
                     (row.benefitsInflow - row.premiumOutflow) >= 0 ? 'text-emerald-700' : 'text-rose-700'
                   }`}>
                     {formatCurrency(row.benefitsInflow - row.premiumOutflow)}
