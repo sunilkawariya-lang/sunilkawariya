@@ -48,14 +48,14 @@ export default function PrivacyPolicy() {
         </h3>
         <div className="space-y-3 text-slate-600 text-sm leading-relaxed">
           <p>
-            Our application integrates with Google Workspace APIs to enable seamless coordination. Specifically, we utilize the <strong>Google Meet REST API</strong> to dynamically generate secure video conference spaces when you list, schedule, or confirm your 1-on-1 premium wealth advisor advisory sessions.
+            Our application integrates with Google Sign-In to enable seamless, secure account registration and access. We do not request or access any restricted/sensitive user data scopes.
           </p>
           <p className="font-semibold text-slate-800">How we handle Google user data:</p>
           <ul className="list-disc pl-5 space-y-1.5">
-            <li><strong>API Permissions:</strong> We only request the minimum required permissions (specifically the <code>https://www.googleapis.com/auth/meetings.space.created</code> or <code>https://www.googleapis.com/auth/meet</code> scopes) necessary to negotiate meeting appointments and create dynamic space locations on your behalf.</li>
+            <li><strong>API Permissions:</strong> We only request basic user identity metadata (like email address, display name, and avatar image) necessary to verify your credentials.</li>
             <li><strong>Transfer & Sharing:</strong> PMS Basket's use and transfer of information received from Google APIs to any other app will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline font-bold">Google API Services User Data Policy</a>, including the Limited Use requirements.</li>
             <li><strong>No Sale, Sharing, or Advertising:</strong> We never sell, share, trade, or analyze your Google-derived data with advertising networks, third parties, or marketing databases.</li>
-            <li><strong>Data Retention:</strong> Google tokens and meeting references are safely stored solely in your client-side memory or securely encrypted Firestore database instance. They can be deleted instantly by logging out or terminating your linked account profile.</li>
+            <li><strong>Data Retention:</strong> Google profile data is cached securely in your client-side session or safely in our Firestore database. It can be removed instantly by logging out or deleting your account profile.</li>
           </ul>
         </div>
       </div>
@@ -72,7 +72,7 @@ export default function PrivacyPolicy() {
             <li>Refining, balancing, and forecasting investment asset allocations.</li>
             <li>Automating high-precision calculators, legacy estates, visual charts, and tax planner workflows.</li>
             <li>Providing instant, AI-driven advisory feedback using securely proxied models.</li>
-            <li>Creating dynamic video conferencing spaces for direct member consultancy.</li>
+            <li>Providing secure, integrated booking logs and scheduling for direct member consultancy.</li>
           </ul>
         </div>
       </div>

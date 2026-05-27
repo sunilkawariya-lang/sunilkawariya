@@ -46,7 +46,6 @@ function getCachedFirestore(databaseId?: string) {
 export const db = getCachedFirestore((firebaseConfig as any).firestoreDatabaseId);
 
 export const googleProvider = new GoogleAuthProvider();
-googleProvider.addScope('https://www.googleapis.com/auth/meetings.space.created');
 
 let cachedAccessToken: string | null = null;
 export const getCachedAccessToken = () => cachedAccessToken;

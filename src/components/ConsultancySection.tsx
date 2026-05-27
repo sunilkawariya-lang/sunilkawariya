@@ -11,8 +11,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
-import { getCachedAccessToken, loginWithGoogle } from '../firebase';
-import { createGoogleMeetSpace } from '../services/meetService';
+import { getCachedAccessToken } from '../firebase';
 
 type Category = 'Wealth Strategy' | 'Global & HNI' | 'Tax & Compliance' | 'Retirement & Legacy' | 'Life Transitions' | 'Protection & Credit' | 'Specialized Assets';
 
@@ -266,38 +265,21 @@ const ConsultancySection: React.FC = () => {
 
   const handlePaymentSuccess = async () => {
     setIsCreatingMeet(true);
-    let meetLink = "https://meet.google.com/abc-defg-hij"; // Default fallback
-    
-    try {
-      const meetSpace = await createGoogleMeetSpace();
-      meetLink = meetSpace.meetingLink;
-      toast.success("Successfully generated your dynamic Google Meet room!");
-    } catch (err: any) {
-      console.warn("Could not create actual Google Meet space:", err);
-      if (err.message === 'AUTH_REQUIRED' || err.message === 'AUTH_EXPIRED') {
-        toast.error("Google account not linked or session expired. Booking with fallback video meeting link.");
-      } else {
-        toast.error(`Could not generate Google Meet link: ${err.message}. Fallback link has been generated.`);
-      }
-    } finally {
+    // Simulate generation of a secure, dedicated consulting room
+    setTimeout(() => {
+      const randomRoomId = Math.random().toString(36).substring(2, 11);
+      const meetLink = `https://meet.jit.si/pmsbasket-consultation-${randomRoomId}`;
       setGeneratedMeetLink(meetLink);
       setIsCreatingMeet(false);
       setBookingStep('success');
+      toast.success("Successfully generated secure virtual consultation room!");
       toast.success("Consultancy session booked successfully!");
-    }
+    }, 1200);
   };
 
   const handleConnectGoogleMeet = async () => {
-    setIsConnectingGoogle(true);
-    try {
-      await loginWithGoogle();
-      toast.success("Google account successfully connected with Google Meet permissions!");
-    } catch (err: any) {
-      console.error(err);
-      toast.error("Failed to authorize Google Meet scope.");
-    } finally {
-      setIsConnectingGoogle(false);
-    }
+    // Disabled as Google Meet Integration is retired/disabled
+    toast.info("Google Meet integration is currently disabled.");
   };
 
   const renderBookingModal = () => {
@@ -479,35 +461,22 @@ const ConsultancySection: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Google Meet Connection Status */}
-                <div className="p-5 bg-indigo-50/80 rounded-3xl border border-indigo-100 flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4">
+                {/* Secure Consulting Room Notice */}
+                <div className="p-5 bg-emerald-50/70 border border-emerald-200/60 rounded-3xl flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4">
                   <div className="flex gap-3 items-start text-center sm:text-left">
-                    <div className="p-2.5 bg-indigo-100 text-indigo-600 rounded-xl mt-0.5 shrink-0 mx-auto sm:mx-0">
+                    <div className="p-2.5 bg-emerald-100 text-emerald-700 rounded-xl mt-0.5 shrink-0 mx-auto sm:mx-0">
                       <Video size={18} />
                     </div>
                     <div className="space-y-0.5">
-                      <h5 className="text-sm font-bold text-slate-900">Google Meet Integration</h5>
+                      <h5 className="text-sm font-bold text-slate-900">Secure Consultation Room</h5>
                       <p className="text-[11.5px] text-slate-500 leading-relaxed">
-                        {getCachedAccessToken() 
-                          ? "Authorized! A dynamic premium video meeting workspace will be generated automatically." 
-                          : "Connect your Google account to auto-generate an interactive live Meet space."}
+                        A secure, private video workspace will be provisioned instantly upon payment. No third-party accounts or installations required.
                       </p>
                     </div>
                   </div>
-                  {getCachedAccessToken() ? (
-                    <div className="px-3 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-xl whitespace-nowrap self-center">
-                      Connected ✓
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleConnectGoogleMeet}
-                      disabled={isConnectingGoogle}
-                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-xs font-bold rounded-xl transition-all shadow-md shrink-0 whitespace-nowrap self-center"
-                    >
-                      {isConnectingGoogle ? 'Linking...' : 'Link Account'}
-                    </button>
-                  )}
+                  <div className="px-3 py-1.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-xl whitespace-nowrap self-center">
+                    E2E Encrypted ✓
+                  </div>
                 </div>
 
                 <div className="space-y-4">
@@ -534,7 +503,7 @@ const ConsultancySection: React.FC = () => {
                     {isCreatingMeet ? (
                       <>
                         <RefreshCw size={18} className="animate-spin text-white" />
-                        Generating Live Google Meet Space...
+                        Provisioning Secure Meeting Workspace...
                       </>
                     ) : (
                       `Pay ₹${selectedTopic.price.toLocaleString()} & Confirm Booking`

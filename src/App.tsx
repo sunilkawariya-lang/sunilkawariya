@@ -308,6 +308,36 @@ export default function App() {
     };
   }, []);
 
+  // Support direct hash routing for Google Verification crawlers of Privacy Policy and Terms
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash;
+      if (hash === '#/privacy-policy') {
+        if (user) {
+          setActiveTab('privacy-policy');
+        } else {
+          setUnauthLegalTab('privacy');
+        }
+      } else if (hash === '#/terms-of-service') {
+        if (user) {
+          setActiveTab('terms-of-service');
+        } else {
+          setUnauthLegalTab('terms');
+        }
+      } else if (hash === '#/google-verification') {
+        if (user) {
+          setActiveTab('google-verification');
+        }
+      }
+    };
+
+    // Check on mount
+    handleHashChange();
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, [user]);
+
   const handleImportInvestments = async (newInvestments: any[], clearExisting?: boolean) => {
     try {
       setIsLiveUpdating(true);
@@ -469,19 +499,21 @@ export default function App() {
               </p>
               
               <div className="flex justify-center items-center gap-1.5 text-[9px] text-slate-400 font-bold uppercase tracking-widest pt-4 border-t border-white/5">
-                <button 
+                <a 
+                  href="#/privacy-policy"
                   onClick={() => setUnauthLegalTab('privacy')}
                   className="hover:text-wealth-gold hover:underline transition-colors cursor-pointer"
                 >
                   Privacy Policy
-                </button>
+                </a>
                 <span className="text-slate-600 font-normal select-none">•</span>
-                <button 
+                <a 
+                  href="#/terms-of-service"
                   onClick={() => setUnauthLegalTab('terms')}
                   className="hover:text-wealth-gold hover:underline transition-colors cursor-pointer"
                 >
                   Terms of Service
-                </button>
+                </a>
               </div>
             </div>
           </div>
